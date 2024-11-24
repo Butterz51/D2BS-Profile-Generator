@@ -1,10 +1,20 @@
+import sys
 import json
 import os
 import tkinter as tk
-from tkinter import messagebox, ttk
 import webbrowser
 import glob
+from tkinter import messagebox, ttk
 from tkinter import filedialog
+
+# Function to determine base path
+def get_base_path():
+    """Get the base directory for the script or executable."""
+    if getattr(sys, 'frozen', False):  # If running as a compiled executable
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(__file__)  # If running as a script
+
+PV = "1.1.0"
 
 # GUI class
 class ProfileGeneratorGUI:
@@ -12,15 +22,14 @@ class ProfileGeneratorGUI:
         self.root = root
         self.root.title("D2BS Profile Generator")
 
-        # Set a fixed window size and lock it
-        #self.root.geometry("1770x760")
-        self.root.resizable(False, False)
-
         # Set a fixed window size
         window_width = 1770
-        window_height = 760
+        window_height = 780
 
-        # Get the screen width and height
+        # Update tasks to ensure the root window is fully initialized
+        self.root.update_idletasks()
+
+        # Get the screen width and height after the update
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
 
@@ -31,8 +40,16 @@ class ProfileGeneratorGUI:
         # Set the geometry of the main window
         self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
+        # Define script directory first
+        self.script_directory = get_base_path()  # Use the base path function
+
+        # Set the icon for the GUI window
+        self.root.iconbitmap(os.path.join(self.script_directory, "icon.ico"))
+
+        # Set a fixed window and lock it
+        self.root.resizable(False, False)
+
         # Define paths for data saving
-        self.script_directory = os.path.dirname(__file__)  # Base directory where the script is located
         self.saved_data_dir = os.path.join(self.script_directory, "Saved Data")
         self.generated_profiles_dir = os.path.join(self.script_directory, "Generated Profiles")
 
@@ -152,7 +169,7 @@ class ProfileGeneratorGUI:
         help_menu = tk.Menu(menu_bar, tearoff=0)
         menu_bar.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About D2BS Profile Generator", command=self.show_about)
-        help_menu.add_command(state="disabled", label="Support The Development", command=self.open_paypal)
+        help_menu.add_command(label="Support The Development", command=self.open_paypal)
 
         # Game Directory Frame
         self.sel_frame = tk.LabelFrame(self.root, text="Game Directory", font=("Arial", 11, "bold"), padx=5, pady=5, bd=3, relief="groove")
@@ -289,7 +306,7 @@ class ProfileGeneratorGUI:
 
         # About text
         tk.Label(about_window, background="#0f1416", foreground="#1a8ec8", text=f"Author: Butterz", font=("Arial", 15, "italic", "bold")).pack(anchor="center", pady=5)
-        tk.Label(about_window, background="#0f1416", foreground="#1a8ec8", text=f"Version: 1.00", font=("Arial", 15, "italic", "bold")).pack(anchor="center", pady=1)
+        tk.Label(about_window, background="#0f1416", foreground="#1a8ec8", text=f"Version: {PV}", font=("Arial", 15, "italic", "bold")).pack(anchor="center", pady=1)
 
         # Discord link1 label
         discord_link = tk.Label(about_window, background="#0f1416", text="Join our Discord", font=("Arial", 13, "underline", "bold"), fg="blue", cursor="hand2")
@@ -323,7 +340,7 @@ class ProfileGeneratorGUI:
 
     # Dontation Supporter
     def open_paypal(self):
-        webbrowser.open("https://PayPal.Me/D2JBHServices")
+        webbrowser.open("https://paypal.me/D2ServicesByJBH?country.x=CA&locale.x=en_US")
 
     # Game Name Fuction
     def update_game_name_state(self, *args):
@@ -565,7 +582,6 @@ class ProfileGeneratorGUI:
     # Save profiles to "Generated Profiles" folder
     def save_profiles(self, profiles):
         output_file_path = os.path.join(self.generated_profiles_dir, "profile.json")
-
         with open(output_file_path, "w") as file:
             for profile in profiles:
                 json.dump(profile, file, separators=(',', ':'), ensure_ascii=False)
@@ -622,16 +638,26 @@ class ProfileGeneratorGUI:
     # Configuration File Settings
     # Update with the game path from the input field
     def save_game_path(self):
-        config_data = {"Path": self.game_path.get(), "Theme": self.theme.get()}
-        self.save_config(config_data)
         config_file_path = os.path.join(self.saved_data_dir, "config.json")
+        config_data = {"Path": self.game_path.get(), "Theme": self.theme.get()}
+        with open(config_file_path, "w") as file:
+            json.dump(config_data, file, indent=2)
         messagebox.showinfo("Success", f"Game path saved to:\n{config_file_path}")
 
     # Save to "Saved Data" folder
     def save_config(self, config_data):
-        config_file_path = os.path.join(self.saved_data_dir, "config.json")
+        config_file_path = os.path.join(self.script_directory, "Saved Data", "config.json")
         with open(config_file_path, "w") as file:
             json.dump(config_data, file, indent=2, ensure_ascii=False)
+
+    def load_config(self):
+        # Load if "config.json" exists, and set the game path and theme
+        config_file_path = os.path.join(self.script_directory, "Saved Data", "config.json")
+        if os.path.exists(config_file_path):
+            with open(config_file_path, "r") as file:
+                config_data = json.load(file)
+                self.game_path.set(config_data.get("Path", ""))
+                self.theme.set(config_data.get("Theme", "Light Mode"))
 
     def load_config(self):
         # Load if "config.json" exists, and set the game path and theme
