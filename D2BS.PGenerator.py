@@ -14,7 +14,7 @@ def get_base_path():
         return os.path.dirname(sys.executable)
     return os.path.dirname(__file__)  # If running as a script
 
-PV = "1.1.0"
+PV = "1.1.2"
 
 # GUI class
 class ProfileGeneratorGUI:
@@ -540,24 +540,23 @@ class ProfileGeneratorGUI:
             for i in range(count):
                 profile_name = f"{prefix_code}-{class_key}-{str(profile_number).zfill(3)}"
                 key_list = f"Key {str(profile_number).zfill(3)}"
-                # Generate a unique game name using the current counter
-                final_game_name = f"{self.game_name.get()}{self.game_name_counter}-"
+                # Ensure the game name is blank if it is 'Disabled'
+                final_game_name = "" if self.game_name.get() == "Disabled" else f"{self.game_name.get()}{self.game_name_counter}-"
                 self.game_name_counter += 1  # Increment for the next profile
 
                 if base_path:
-                    if d2path_counter <= double_limit:
-                        if d2path_use_count < 2:
+                    if d2path_counter <= game_exe_limit:
+                        if d2path_counter <= double_limit and d2path_use_count < 2:
+                            # Double up logic
                             d2path = f"{base_path}Game{d2path_counter}.exe"
                             d2path_use_count += 1
                         else:
+                            # Move to the next game path
                             d2path_counter += 1
-                            d2path = f"{base_path}Game{d2path_counter}.exe"
                             d2path_use_count = 1
+                            d2path = f"{base_path}Game{d2path_counter}.exe"
                     else:
-                        d2path = f"{base_path}Game{d2path_counter}.exe"
-                        d2path_counter += 1
-
-                    if d2path_counter > game_exe_limit:
+                        # Use the last available game path if exceeding the game_exe_limit
                         d2path = f"{base_path}Game{game_exe_limit}.exe"
                 else:
                     d2path = ""
